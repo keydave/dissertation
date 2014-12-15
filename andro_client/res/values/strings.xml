@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Controller</string>
+    <string name="send">Send</string>
+    <string name="reset">Reset</string>
+    <string name="speed">Speed</string>
+    <string name="altitude">Altitude</string>
+    <string name="vertical_speed">Vertical speed</string>
+    <string name="rpm">RPM</string>
+    <string name="port">Port</string>
+    <string name="ip_address">IP address</string>
+    <string name="yaw">Yaw</string>
+</resources>
