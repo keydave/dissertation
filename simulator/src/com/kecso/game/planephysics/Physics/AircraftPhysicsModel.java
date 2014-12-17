@@ -1190,7 +1190,7 @@ public class AircraftPhysicsModel {
         //initial values
         this.speed = 45;
         this.trimElevatorAoa = 3;
-        this.alt = 50;
+        this.alt = 250;
         this.engineForce = 2000;
         this.elevatorAoa = trimElevatorAoa;
     }

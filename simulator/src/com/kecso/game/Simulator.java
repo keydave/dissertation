@@ -11,6 +11,7 @@ import com.jme3.bullet.control.RigidBodyControl;
 import com.jme3.bullet.util.CollisionShapeFactory;
 import com.jme3.effect.ParticleEmitter;
 import com.jme3.effect.ParticleMesh.Type;
+import com.jme3.font.BitmapText;
 import com.jme3.input.ChaseCamera;
 import com.jme3.input.KeyInput;
 import com.jme3.input.controls.ActionListener;
@@ -23,8 +24,10 @@ import com.jme3.math.FastMath;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Vector3f;
 import com.jme3.renderer.queue.RenderQueue;
+import com.jme3.scene.CameraNode;
 import com.jme3.scene.Node;
 import com.jme3.scene.Spatial;
+import com.jme3.scene.control.CameraControl.ControlDirection;
 import com.jme3.shadow.DirectionalLightShadowRenderer;
 import com.jme3.system.AppSettings;
 import com.jme3.terrain.noise.ShaderUtils;
@@ -37,6 +40,7 @@ import com.jme3.terrain.noise.fractal.FractalSum;
 import com.jme3.terrain.noise.modulator.NoiseModulator;
 import com.jme3.texture.Texture;
 import com.jme3.texture.Texture.WrapMode;
+import com.jme3.ui.Picture;
 import java.util.Calendar;
 import com.kecso.game.planephysics.Aircrafts.DefaultAircraft;
 import com.kecso.game.planephysics.IO.InputParameters;
@@ -92,6 +96,11 @@ public class Simulator extends SimpleApplication {
     private AudioNode audio3;
     private AudioNode audioBum;
     private ChaseCamera chaseCam;
+    private CameraNode cameraNode;
+    private BitmapText speedText;
+    private BitmapText altText;
+    private BitmapText rpmText;
+    private BitmapText vertsText;
 
     public PhysicsSpace getPhysicsSpace() {
         return this.bulletAppState.getPhysicsSpace();
@@ -99,6 +108,8 @@ public class Simulator extends SimpleApplication {
 
     @Override
     public void simpleInitApp() {
+        setDisplayFps(false);
+        setDisplayStatView(false);
         socketThread = new Thread(serverSocketControl);
         socketThread.start();
         initializeSky();
@@ -140,6 +151,8 @@ public class Simulator extends SimpleApplication {
         rootNode.addLight(dl);
         flyCam.setEnabled(false);
         createPlane();
+        createHud();
+
 
     }
 
@@ -156,6 +169,10 @@ public class Simulator extends SimpleApplication {
         chaseCam.setSmoothMotion(true);
         chaseCam.setMinDistance(5);
         chaseCam.setMaxDistance(7);
+        chaseCam.setChasingSensitivity(10);
+        chaseCam.setDefaultHorizontalRotation(FastMath.PI);
+        chaseCam.setDefaultVerticalRotation(0.2f);
+
 
         input = new InputParameters();
         input.setDt(this.dtInSeconds);
@@ -405,6 +422,8 @@ public class Simulator extends SimpleApplication {
         this.aircraftPhysicsModel.normalizeGravity(this.azimuth, this.zenith, this.norm);
         serverSocketControl.setOutput(output);
 
+        updateHud();
+
         manageSound(true, false);
 
     }
@@ -551,6 +570,7 @@ public class Simulator extends SimpleApplication {
                 fire.setLowLife(10f);
                 fire.setHighLife(15f);
                 fire.getParticleInfluencer().setVelocityVariation(0.3f);
+                chaseCam.setMinVerticalRotation(0.8f);
 
                 planePhy.setKinematic(false);
                 for (Spatial child : planeNode.getChildren()) {
@@ -569,11 +589,58 @@ public class Simulator extends SimpleApplication {
                     childNode.attachChild(fire);
                 }
                 manageSound(true, true);
-
+                speedText.setText("0");
+                vertsText.setText("0");
+                rpmText.setText("0");
 
                 collided = true;
                 update = false;
             }
         }
     };
+
+    private void createHud() {
+
+        Picture pic = new Picture("HUD Picture");
+        pic.setImage(assetManager, "Pictures/hud.png", true);
+        pic.setWidth(settings.getWidth() / 2);
+        pic.setHeight(settings.getHeight() / 10);
+        pic.setPosition(settings.getWidth() / 2 - settings.getWidth() / 4, 0);
+        guiNode.attachChild(pic);
+
+        speedText = new BitmapText(guiFont, false);
+        speedText.setSize(guiFont.getCharSet().getRenderedSize());      // font size
+        speedText.setColor(ColorRGBA.Black);                             // font color
+        speedText.setText("0");             // the text
+        speedText.setLocalTranslation(settings.getWidth() / 2 - settings.getWidth() / 6, settings.getHeight() / 16, 0); // position
+        guiNode.attachChild(speedText);
+
+        altText = new BitmapText(guiFont, false);
+        altText.setSize(guiFont.getCharSet().getRenderedSize());      // font size
+        altText.setColor(ColorRGBA.Black);                             // font color
+        altText.setText("0");             // the text
+        altText.setLocalTranslation(settings.getWidth() / 2 - settings.getWidth() / 20, settings.getHeight() / 16, 0); // position
+        guiNode.attachChild(altText);
+
+        rpmText = new BitmapText(guiFont, false);
+        rpmText.setSize(guiFont.getCharSet().getRenderedSize());      // font size
+        rpmText.setColor(ColorRGBA.Black);                             // font color
+        rpmText.setText("0");             // the text
+        rpmText.setLocalTranslation(settings.getWidth() / 2 + settings.getWidth() / 14, settings.getHeight() / 16, 0); // position
+        guiNode.attachChild(rpmText);
+
+        vertsText = new BitmapText(guiFont, false);
+        vertsText.setSize(guiFont.getCharSet().getRenderedSize());      // font size
+        vertsText.setColor(ColorRGBA.Black);                             // font color
+        vertsText.setText("0");             // the text
+        vertsText.setLocalTranslation(settings.getWidth() / 2 + settings.getWidth() / 5.2f, settings.getHeight() / 16, 0); // position
+        guiNode.attachChild(vertsText);
+    }
+
+    private void updateHud() {
+        speedText.setText(String.format("%3.1f", output.getSpeed()));
+        vertsText.setText(String.format("%3.1f", output.getVerticalSpeed()));
+        altText.setText(String.format("%3.1f", output.getAltitude()));
+        rpmText.setText(String.format("%3.1f", output.getRpm()));
+    }
 }
