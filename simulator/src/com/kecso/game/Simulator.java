@@ -101,6 +101,7 @@ public class Simulator extends SimpleApplication {
     private BitmapText altText;
     private BitmapText rpmText;
     private BitmapText vertsText;
+    private Picture loading;
 
     public PhysicsSpace getPhysicsSpace() {
         return this.bulletAppState.getPhysicsSpace();
@@ -152,8 +153,6 @@ public class Simulator extends SimpleApplication {
         flyCam.setEnabled(false);
         createPlane();
         createHud();
-
-
     }
 
     private void createPlane() {
@@ -334,6 +333,7 @@ public class Simulator extends SimpleApplication {
 
 
         if (world.isLoaded() && update) {
+            if (guiNode.hasChild(loading)) guiNode.detachChild(loading);
             moveAircraft();
             this.sleepTime = (this.dtInMillis - (System.currentTimeMillis() - this.startTime));
             if (this.sleepTime > 0L) {
@@ -601,12 +601,12 @@ public class Simulator extends SimpleApplication {
 
     private void createHud() {
 
-        Picture pic = new Picture("HUD Picture");
-        pic.setImage(assetManager, "Pictures/hud.png", true);
-        pic.setWidth(settings.getWidth() / 2);
-        pic.setHeight(settings.getHeight() / 10);
-        pic.setPosition(settings.getWidth() / 2 - settings.getWidth() / 4, 0);
-        guiNode.attachChild(pic);
+        Picture stat = new Picture("HUD Picture");
+        stat.setImage(assetManager, "Pictures/hud.png", true);
+        stat.setWidth(settings.getWidth() / 2);
+        stat.setHeight(settings.getHeight() / 10);
+        stat.setPosition(settings.getWidth() / 2 - settings.getWidth() / 4, 0);
+        guiNode.attachChild(stat);
 
         speedText = new BitmapText(guiFont, false);
         speedText.setSize(guiFont.getCharSet().getRenderedSize());      // font size
@@ -635,6 +635,13 @@ public class Simulator extends SimpleApplication {
         vertsText.setText("0");             // the text
         vertsText.setLocalTranslation(settings.getWidth() / 2 + settings.getWidth() / 5.2f, settings.getHeight() / 16, 0); // position
         guiNode.attachChild(vertsText);
+
+        loading = new Picture("loading_text");
+        loading.setImage(assetManager, "Pictures/loading.png", true);
+        loading.setWidth(settings.getWidth() / 4);
+        loading.setHeight(settings.getHeight() / 10);
+        loading.setPosition(settings.getWidth() / 2 - settings.getWidth() / 8, settings.getHeight()/ 2);
+        guiNode.attachChild(loading);
     }
 
     private void updateHud() {
